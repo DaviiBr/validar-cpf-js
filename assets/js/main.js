@@ -1,45 +1,47 @@
-function ValidaCPF(cpfEnviado) {
-    Object.defineProperty(this, 'cpfLimpo', {
-        enumerable: true,
-        get: function() {
-            return cpfEnviado.replace(/\D+/g, '')
+class ValidaCPF {
+    constructor(cpfEnviado) {
+        Object.defineProperty(this, 'cpfLimpo', {
+            writable: false,
+            enumerable: true,
+            configurable: false,
+            value: cpfEnviado.replace(/\D+/g, '')
+        })
+    }
+
+        isSequence() {
+            return this.cpfLimpo.charAt(0).repeat(11) === this.cpfLimpo
         }
-    })
-}
 
-ValidaCPF.prototype.valida = function() {
-    if(typeof this.cpfLimpo === 'undefined') return false;
-    if(this.cpfLimpo.length !== 11) return false
-    if(this.isSequencia()) return false
+        geraNovoCpf() {
+            const cpfSemDigitos = this.cpfLimpo.slice(0, -2);
+            const digito1 = ValidaCPF.geraDigito(cpfSemDigitos);
+            const digito2 = ValidaCPF.geraDigito(cpfSemDigitos + digito1);
+            this.novoCPF = cpfSemDigitos + digito1 + digito2;
+        }
 
-    const cpfParcial = this.cpfLimpo.slice(0, -2)
-    const digito1 = this.criaDigito(cpfParcial)
-    const digito2 = this.criaDigito(cpfParcial + digito1)
+        static geraDigito(cpfSemDigitos) {
+            let total = 0
+            let reverso = cpfSemDigitos.length + 1
 
-    const novoCpf = cpfParcial + digito1 + digito2
+            for(let stringNumerica of cpfSemDigitos) {
+                total += reverso * Number(stringNumerica)
+                reverso--;
+            }
 
-    return novoCpf === this.cpfLimpo
-}
+            const digito = 11 - (total % 11)
+            return digito <= 9 ? String(digito) : '0';
+        }
 
-ValidaCPF.prototype.criaDigito = function(cpfParcial) {
-    const cpfArrey = Array.from(cpfParcial)
+        valida() {
+            if(!this.cpfLimpo) return false;
+            if(typeof this.cpfLimpo !== 'string') return false;
+            if(this.cpfLimpo.length !== 11) return false;
+            if(this.isSequence()) return false;
+            this.geraNovoCpf()
 
-    let regressivo = cpfArrey.length + 1;
-    const total = cpfArrey.reduce((ac, val) => {
-        ac += (regressivo * Number(val))
-        regressivo--;
-        return ac
-    }, 0)
-    
-    const digito = 11 - (total % 11)
-    return digito > 9 ? '0' : String(digito);
-    
-}
-
-ValidaCPF.prototype.isSequencia = function() {
-    const sequencia = this.cpfLimpo[0].repeat(this.cpfLimpo.length)
-    return sequencia === this.cpfLimpo
-}
+            return this.novoCPF === this.cpfLimpo
+        }
+    }
 
 function limparResultado() {
     const paragrafosAntigos = document.querySelectorAll('.resultado-cpf');
@@ -75,9 +77,12 @@ verificar.addEventListener('click', function(event) {
 });
 
 inputCPF.addEventListener('input', function() {
-    let valorAtual = inputCPF.value.replace(/\D+/g, ''); 
-    const cpfFormatado = valorAtual.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
+    let valorAtual = inputCPF.value.replace(/\D+/g, '');
+    
+    // Atualizar a instância cpfLimpo com o valor atualizado
+    cpf.cpfLimpo = valorAtual;
 
+    const cpfFormatado = valorAtual.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
     inputCPF.value = cpfFormatado;
 });
 
